@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/security
+       http://www.springframework.org/schema/security/spring-security.xsd
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <!--  for datasource connection-->
+    <import resource="classpath:application-connection.xml"/>
+
+    <!-- Enable Spring Security -->
+    <security:http auto-config="true">
+
+        <security:csrf disabled="true"/>
+
+        <!--Access control -->
+        <security:intercept-url pattern="/login" access="permitAll()"/>
+        <security:intercept-url pattern="/addBook" access="permitAll()"/>
+        <security:intercept-url pattern="/logout" access="permitAll()"/>
+        <security:intercept-url pattern="/logOut" access="permitAll()"/>
+        <security:intercept-url pattern="/loginError" access="permitAll()"/>
+        <security:intercept-url pattern="/books" access="permitAll()"/>
+        <security:intercept-url pattern="/about" access="permitAll()"/>
+
+
+
+        <security:intercept-url pattern="/" access="permitAll"/>
+
+        <!--also use hasRole(),but in this "ROLE_" prefix will add automatically-->
+        <security:intercept-url pattern="/adminHome" access="hasRole('ROLE_ADMIN')"/>
+
+        <security:intercept-url pattern="/bo" access="hasRole('ROLE_CUSTOMER')"/>
+
+
+        <security:intercept-url pattern="/**" access="permitAll()"/>
+
+        <!-- Default Login -->
+        <security:form-login
+                login-page="/login"
+                login-processing-url="/login"
+                default-target-url="/"
+                authentication-failure-url="/loginError"
+                authentication-success-handler-ref="successHandler1"
+                username-parameter="email"
+                password-parameter="password"
+        />
+
+
+
+        <!-- Default Logout -->
+        <security:logout logout-url="/logout"
+                         logout-success-url="/logOut"
+                         invalidate-session="true"
+                         delete-cookies="JSESSIONID"
+        />
+    </security:http>
+
+
+    <!-- In-Memory Authentication-->
+    <security:authentication-manager>
+        <security:authentication-provider>
+
+            <!--            without encoder-->
+            <!--            select username,concat('{noop}',password),1 from customer where username=?"-->
+            <security:password-encoder ref="bCryptPasswordEncoder"/>
+
+            <security:jdbc-user-service data-source-ref="driverManagerDataSource"
+                                        users-by-username-query="select email,password,1 from customer where email=?"
+                                        authorities-by-username-query="select email,role from customer where email=?"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+ <bean id="successHandler1" class="org.spring.bookMitra.handler.LoginSuccessHandler"/>
+    <bean class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" id="bCryptPasswordEncoder"/>
+
+</beans>
